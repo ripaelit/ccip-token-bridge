@@ -12,7 +12,7 @@
   "bscTestnet": {
     "BasicMessageReceiver": "0x4F9939353013ea8253b3Bfba31aF8e13D8aB05A4",
     "MockUSDT": "0x1317EE60b378062aF66eF8DE4398eA104dc54Db4",
-    "Bridge": "0x214Ef20fC91f090147424EBdfFD8fd2b02458595"
+    "Bridge": "0x81C1A05572d37221a73cc2D6696cC372a8319C47"
   },
   "arbitrumOne": {
     "BasicMessageSender": "0x3EcB1C002a13d5C1D75E973b57340607f0385ab1",
@@ -26,6 +26,6 @@
   },
   "sepolia": {
     "MockUSDT": "0x9C0Ce9D2cEce3Eb55d3562A0FB8A25b6ea82082d",
-    "Bridge": "0x28416C965662AcEA5b292FF65bA3402Df0619729"
+    "Bridge": "0xc20Fae721D2444efD95a3f6E1301de04C8DBe0FC"
   }
 }

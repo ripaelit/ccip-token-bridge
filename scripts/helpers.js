@@ -3,7 +3,7 @@ const deployments = require('./deployments.json');
 const gasReport = require('./gasReport.json');
 const hre = require('hardhat');
 const { ethers, run } = require('hardhat');
-const { routers, links, usdts, dstChains, chainSelectors } = require("./constants");
+const { routers, links, usdts, dstChains, chainSelectors, protocolFee } = require("./constants");
 
 const getTargetAddress = (contractName, network) => {
   return deployments[network][contractName];
@@ -158,6 +158,9 @@ const configBridge = async () => {
   await tx.wait();
 
   tx = await Bridge.setDestinationBridge(dstBridge);
+  await tx.wait();
+
+  tx = await Bridge.setProtocolFee(protocolFee);
   await tx.wait();
 }
 

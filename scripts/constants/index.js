@@ -92,6 +92,8 @@ const tokenAbi = [
   'function transfer(address to, uint256 amount) returns (bool)',
 ];
 
+const protocolFee = "10000000000";
+
 module.exports = {
   routers,
   chainSelectors,
@@ -99,5 +101,6 @@ module.exports = {
   weths,
   usdts,
   dstChains,
-  tokenAbi
+  tokenAbi,
+  protocolFee
 };

@@ -43,7 +43,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator {
     event SetDestinationChainSelector(uint64 _destinationChainSelector);
     event SetDestinationBridge(address _destinationBridge);
     event SetFeePercentage(uint256 _feePercentage);
-    event SetFeeAmount(uint256 _feeAmount);
+    event SetProtocolFee(uint256 _protocolFee);
 
     uint16 internal constant TYPE_REQUEST_ADD_LIQUIDITY = 1;
     uint16 internal constant TYPE_REQUEST_SEND_TOKEN = 2;
@@ -53,7 +53,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator {
     uint64 public destinationChainSelector;
     address public destinationBridge;
     uint256 public feePercentage;
-    uint256 public feeAmount;
+    uint256 public protocolFee;
 
     /// @notice Constructor initializes the contract with the router address.
     /// @param router The address of the router contract.
@@ -86,7 +86,6 @@ contract Bridge is CCIPReceiver, OwnerIsCreator {
         });
         IRouterClient router = IRouterClient(this.getRouter());
         uint256 ccipFee = router.getFee(destinationChainSelector, evm2AnyMessage);
-        uint256 protocolFee;
         fee = ccipFee + protocolFee;
     }
 
@@ -148,7 +147,6 @@ contract Bridge is CCIPReceiver, OwnerIsCreator {
 
         // Get the fee required to send the message
         uint256 ccipFee = router.getFee(destinationChainSelector, evm2AnyMessage);
-        uint256 protocolFee;
         uint256 fee = ccipFee + protocolFee;
         require(msg.value >= fee, "Insufficient fee");
 
@@ -233,10 +231,10 @@ contract Bridge is CCIPReceiver, OwnerIsCreator {
         emit SetFeePercentage(_feePercentage);
     }
 
-    function setFeeAmount(uint256 _feeAmount) external onlyOwner {
-        require(_feeAmount != 0, "Zero fee");
-        feeAmount = _feeAmount;
-        emit SetFeeAmount(_feeAmount);
+    function setProtocolFee(uint256 _protocolFee) external onlyOwner {
+        require(_protocolFee != 0, "Zero fee");
+        protocolFee = _protocolFee;
+        emit SetProtocolFee(_protocolFee);
     }
 
     /// @notice Allows the contract owner to withdraw the entire balance of Ether from the contract.

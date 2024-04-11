@@ -6,42 +6,42 @@
     "deployMockUSDT-arbsep": "npx hardhat run ./scripts/deployMockUSDT.js --network arbitrumSepolia",
     "deployBridge-arbsep": "npx hardhat run ./scripts/deployBridge.js --network arbitrumSepolia",
     "configBridge-arbsep": "npx hardhat run ./scripts/configBridge.js --network arbitrumSepolia",
-    "test-arbsep": "npx hardhat test ./test/testnet.test.js --network arbitrumSepolia",
+    "test-arbsep": "npx hardhat test ./test/Bridge.test.js --network arbitrumSepolia",
     
     "deployMockUSDT-optsep": "npx hardhat run ./scripts/deployMockUSDT.js --network optimismSepolia",
     "deployBridge-optsep": "npx hardhat run ./scripts/deployBridge.js --network optimismSepolia",
     "configBridge-optsep": "npx hardhat run ./scripts/configBridge.js --network optimismSepolia",
-    "test-optsep": "npx hardhat test ./test/testnet.test.js --network optimismSepolia",
+    "test-optsep": "npx hardhat test ./test/Bridge.test.js --network optimismSepolia",
     
     "deployMockUSDT-sepolia": "npx hardhat run ./scripts/deployMockUSDT.js --network sepolia",
     "deployBridge-sepolia": "npx hardhat run ./scripts/deployBridge.js --network sepolia",
     "configBridge-sepolia": "npx hardhat run ./scripts/configBridge.js --network sepolia",
-    "test-sepolia": "npx hardhat test ./test/testnet.test.js --network sepolia",
+    "test-sepolia": "npx hardhat test ./test/Bridge.test.js --network sepolia",
     
     "deployMockUSDT-bscTestnet": "npx hardhat run ./scripts/deployMockUSDT.js --network bscTestnet",
     "deployBridge-bscTestnet": "npx hardhat run ./scripts/deployBridge.js --network bscTestnet",
     "configBridge-bscTestnet": "npx hardhat run ./scripts/configBridge.js --network bscTestnet",
-    "test-bscTestnet": "npx hardhat test ./test/testnet.test.js --network bscTestnet",
+    "test-bscTestnet": "npx hardhat test ./test/Bridge.test.js --network bscTestnet",
     
     "deployMockUSDT-arb": "npx hardhat run ./scripts/deployMockUSDT.js --network arbitrumOne",
     "deployBridge-arb": "npx hardhat run ./scripts/deployBridge.js --network arbitrumOne",
     "configBridge-arb": "npx hardhat run ./scripts/configBridge.js --network arbitrumOne",
-    "test-arb": "npx hardhat test ./test/livenet.test.js --network arbitrumOne",
+    "test-arb": "npx hardhat test ./test/Bridge.test.js --network arbitrumOne",
     
     "deployMockUSDT-opt": "npx hardhat run ./scripts/deployMockUSDT.js --network optimisticEthereum",
     "deployBridge-opt": "npx hardhat run ./scripts/deployBridge.js --network optimisticEthereum",
     "configBridge-opt": "npx hardhat run ./scripts/configBridge.js --network optimisticEthereum",
-    "test-opt": "npx hardhat test ./test/livenet.test.js --network optimisticEthereum",
+    "test-opt": "npx hardhat test ./test/Bridge.test.js --network optimisticEthereum",
     
     "deployMockUSDT-eth": "npx hardhat run ./scripts/deployMockUSDT.js --network mainnet",
     "deployBridge-eth": "npx hardhat run ./scripts/deployBridge.js --network mainnet",
     "configBridge-eth": "npx hardhat run ./scripts/configBridge.js --network mainnet",
-    "test-eth": "npx hardhat test ./test/livenet.test.js --network mainnet",
+    "test-eth": "npx hardhat test ./test/Bridge.test.js --network mainnet",
     
     "deployMockUSDT-bsc": "npx hardhat run ./scripts/deployMockUSDT.js --network bsc",
     "deployBridge-bsc": "npx hardhat run ./scripts/deployBridge.js --network bsc",
     "configBridge-bsc": "npx hardhat run ./scripts/configBridge.js --network bsc",
-    "test-bsc": "npx hardhat test ./test/livenet.test.js --network bsc"
+    "test-bsc": "npx hardhat test ./test/Bridge.test.js --network bsc"
   },
   "devDependencies": {
     "@chainlink/contracts": "^0.6.1",
