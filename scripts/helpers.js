@@ -3,7 +3,7 @@ const deployments = require('./deployments.json');
 const gasReport = require('./gasReport.json');
 const hre = require('hardhat');
 const { ethers, run } = require('hardhat');
-const { routers, links, usdts, dstChains, chainSelectors, protocolFee } = require("./constants");
+const { routers, links, tokens, dstChains, chainSelectors, protocolFee } = require("./constants");
 
 const getTargetAddress = (contractName, network) => {
   return deployments[network][contractName];
@@ -145,23 +145,32 @@ const configBridge = async () => {
   const network = hre.network.name;
   const BridgeAddress = getTargetAddress('Bridge', network);
   const Bridge = await ethers.getContractAt('Bridge', BridgeAddress);
-  const token = usdts[network];
   const dstChain = dstChains[network];
   const dstChainSelector = chainSelectors[dstChain]
   const dstBridge = getTargetAddress('Bridge', dstChain);
-  console.log({token}, {dstChain}, {dstChainSelector}, {dstBridge});
-
-  tx = await Bridge.setToken(token);
-  await tx.wait();
+  console.log({dstChain}, {dstChainSelector}, {dstBridge});
 
   tx = await Bridge.setDestinationChainSelector(dstChainSelector);
   await tx.wait();
+  console.log(`Bridge.setDestinationChainSelector(${dstChainSelector}): ${await Bridge.destinationChainSelector()}`);
 
   tx = await Bridge.setDestinationBridge(dstBridge);
   await tx.wait();
+  console.log(`Bridge.setDestinationBridge(${dstBridge}): ${await Bridge.destinationBridge()}`);
 
   tx = await Bridge.setProtocolFee(protocolFee);
   await tx.wait();
+  console.log(`Bridge.setProtocolFee(${protocolFee}): ${await Bridge.protocolFee()}`);
+
+  // Add tokens
+
+  tx = await Bridge.addToken(tokens[network].musdt);
+  await tx.wait();
+  console.log(`Bridge.addToken(${tokens[network].musdt}): ${await Bridge.getSupportedTokens()}`);
+  
+  tx = await Bridge.addToken(tokens[network].musdc);
+  await tx.wait();
+  console.log(`Bridge.addToken(${tokens[network].musdc}): ${await Bridge.getSupportedTokens()}`);
 }
 
 const deployMockUSDT = async () => {
@@ -189,6 +198,31 @@ const deployMockUSDT = async () => {
   }
 };
 
+const deployMockUSDC = async () => {
+  // hre.changeNetwork(network);
+  let network = hre.network.name;
+  let accounts = await ethers.getSigners();
+  let owner = accounts[0];
+  let balanceBefore = await ethers.provider.getBalance(owner.address);
+  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+
+  const MockUSDCFactory = await ethers.getContractFactory("MockUSDT");
+  const MockUSDC = await MockUSDCFactory.deploy("Mock USDC", "MUSDC");
+  await MockUSDC.deployed();
+  setTargetAddress("MockUSDC", network, MockUSDC.address);
+  await setGasReport("MockUSDC", network, balanceBefore);
+
+  try {
+    await run('verify:verify', {
+      address: getTargetAddress('MockUSDC', network),
+      constructorArguments: ["Mock USDC", "MUSDC"],
+    });
+    console.log('Verified MockUSDC');
+  } catch (e) {
+    console.log(e);
+  }
+};
+
 module.exports = {
   getTargetAddress,
   setTargetAddress,
@@ -197,5 +231,6 @@ module.exports = {
   deployReceiver,
   deployBridge,
   configBridge,
-  deployMockUSDT
+  deployMockUSDT,
+  deployMockUSDC
 };
