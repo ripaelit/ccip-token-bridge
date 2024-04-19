@@ -3,7 +3,7 @@ const deployments = require('./deployments.json');
 const gasReport = require('./gasReport.json');
 const hre = require('hardhat');
 const { ethers, run } = require('hardhat');
-const { routers, links, tokens, dstChains, chainSelectors, protocolFee } = require("./constants");
+const { routers, links, tokens, targetChains, chainSelectors, protocolFee } = require("./constants");
 
 const getTargetAddress = (contractName, network) => {
   return deployments[network][contractName];
@@ -131,11 +131,12 @@ const deployBridge = async () => {
   await setGasReport("Bridge", network, balanceBefore);
 
   try {
+    const targetAddr = getTargetAddress('Bridge', network);
     await run('verify:verify', {
-      address: getTargetAddress('Bridge', network),
+      address: targetAddr,
       constructorArguments: [router],
     });
-    console.log('Verified Bridge');
+    console.log(`Verified Bridge ${targetAddr} in ${network}`);
   } catch (e) {
     console.log(e);
   }
@@ -145,25 +146,24 @@ const configBridge = async () => {
   const network = hre.network.name;
   const BridgeAddress = getTargetAddress('Bridge', network);
   const Bridge = await ethers.getContractAt('Bridge', BridgeAddress);
-  const dstChain = dstChains[network];
-  const dstChainSelector = chainSelectors[dstChain]
-  const dstBridge = getTargetAddress('Bridge', dstChain);
-  console.log({dstChain}, {dstChainSelector}, {dstBridge});
+  const targetChain = targetChains[network];
+  const targetChainSelector = chainSelectors[targetChain]
+  const targetBridge = getTargetAddress('Bridge', targetChain);
+  console.log({targetChain}, {targetChainSelector}, {targetBridge});
 
-  tx = await Bridge.setDestinationChainSelector(dstChainSelector);
+  tx = await Bridge.setTargetChainSelector(targetChainSelector);
   await tx.wait();
-  console.log(`Bridge.setDestinationChainSelector(${dstChainSelector}): ${await Bridge.destinationChainSelector()}`);
+  console.log(`Bridge.setTargetChainSelector(${targetChainSelector}): ${await Bridge.targetChainSelector()}`);
 
-  tx = await Bridge.setDestinationBridge(dstBridge);
+  tx = await Bridge.setTargetBridge(targetBridge);
   await tx.wait();
-  console.log(`Bridge.setDestinationBridge(${dstBridge}): ${await Bridge.destinationBridge()}`);
+  console.log(`Bridge.setTargetBridge(${targetBridge}): ${await Bridge.targetBridge()}`);
 
   tx = await Bridge.setProtocolFee(protocolFee);
   await tx.wait();
   console.log(`Bridge.setProtocolFee(${protocolFee}): ${await Bridge.protocolFee()}`);
 
   // Add tokens
-
   tx = await Bridge.addToken(tokens[network].musdt);
   await tx.wait();
   console.log(`Bridge.addToken(${tokens[network].musdt}): ${await Bridge.getSupportedTokens()}`);

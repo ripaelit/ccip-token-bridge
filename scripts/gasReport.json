@@ -1,4 +1,4 @@
 {
-  "bscTestnet": { "MockUSDT": 1549837, "Bridge": 3986653, "MockUSDC": 232475 },
-  "sepolia": { "MockUSDT": 2282115, "Bridge": 4831470, "MockUSDC": 2324412 }
+  "bscTestnet": { "MockUSDT": 1549837, "Bridge": 3758041, "MockUSDC": 232475 },
+  "sepolia": { "MockUSDT": 2282115, "Bridge": 3089, "MockUSDC": 2324412 }
 }

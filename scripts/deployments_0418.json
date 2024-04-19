@@ -1,11 +1,11 @@
 {
   "sepolia": {
-    "Bridge": "0xAe1D9ea8eFcAedE32013270560d993b84a4F31b3",
+    "Bridge": "0x3447bA9dFdcBbd37db573809423d046Ad9Efe77D",
     "MockUSDT": "0x9C0Ce9D2cEce3Eb55d3562A0FB8A25b6ea82082d",
     "MockUSDC": "0xea485A0BFcD17618296bF85dE46A2e3f13f80f5a"
   },
   "bscTestnet": {
-    "Bridge": "0xAe1D9ea8eFcAedE32013270560d993b84a4F31b3",
+    "Bridge": "0xaa9Ced8f7F7199Ee984deDf873EB28FDE9B48E02",
     "MockUSDT": "0x1317EE60b378062aF66eF8DE4398eA104dc54Db4",
     "MockUSDC": "0xbBB6D3FE3d94a12b8C2186Af4Ab279fC277d203c"
   }

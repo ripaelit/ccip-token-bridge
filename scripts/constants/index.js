@@ -48,7 +48,7 @@ const tokens = {
   },
 }
 
-const dstChains = {
+const targetChains = {
   mainnet: "bsc",
   bsc: "mainnet",
 
@@ -73,7 +73,7 @@ module.exports = {
   links,
   weths,
   tokens,
-  dstChains,
+  targetChains,
   tokenAbi,
   protocolFee
 };
