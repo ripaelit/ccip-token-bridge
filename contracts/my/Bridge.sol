@@ -25,8 +25,8 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     // Event emitted when a message is sent to another chain.
     event MessageSent(
         bytes32 indexed messageId, // The unique ID of the message.
-        uint64 indexed destinationChainSelector, // The chain selector of the destination chain.
-        address receiver, // The address of the receiver on the destination chain.
+        uint64 indexed targetChainSelector, // The chain selector of the target chain.
+        address receiver, // The address of the receiver on the target chain.
         uint16 msgType, // The type of message.
         address toAddress, // The address to receive token.
         uint16 tokenId, // The token id.
@@ -47,8 +47,8 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
 
     event AddToken(uint16 _tokenId, address _token);
     event RemoveToken(uint16 _tokenId, address _token);
-    event SetDestinationChainSelector(uint64 _destinationChainSelector);
-    event SetDestinationBridge(address _destinationBridge);
+    event SetTargetChainSelector(uint64 _targetChainSelector);
+    event SetTargetBridge(address _targetBridge);
     event SetProtocolFee(uint256 _protocolFee);
     event Withdraw(address _beneficiary);
     event WithdrawToken(address _token, address _beneficiary);
@@ -59,9 +59,9 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     mapping(uint16 => address) public id2token; // tokenId => address
     mapping(address => uint16) public token2id; // address => tokenId
     uint16 public lastTokenId;
-    mapping(uint16 => uint256) destinationBalance; // tokenId => amount
-    uint64 public destinationChainSelector;
-    address public destinationBridge;
+    mapping(uint16 => uint256) targetBalance; // tokenId => amount
+    uint64 public targetChainSelector;
+    address public targetBridge;
     uint256 public protocolFee;
     IRouterClient public router;
 
@@ -101,41 +101,46 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         returns (Client.EVM2AnyMessage memory evm2AnyMessage, uint256 fee)
     {
         evm2AnyMessage = Client.EVM2AnyMessage({
-            receiver: abi.encode(destinationBridge),
+            receiver: abi.encode(targetBridge),
             data: abi.encode(msgType, toAddress, tokenId, amount),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
             feeToken: address(0)
         });
-        fee = router.getFee(destinationChainSelector, evm2AnyMessage);
+        fee = router.getFee(targetChainSelector, evm2AnyMessage);
     }
 
     function quoteAddLiquidityFee(
         address token,
         uint256 amount
-    ) public view returns (uint256 fee) {
-        uint16 tokenId = token2id[token];
-        (, uint256 _ccipFee) = _quoteCcipFee(
-            TYPE_REQUEST_ADD_LIQUIDITY,
-            msg.sender,
-            tokenId,
-            amount
-        );
-        fee = _ccipFee;
+    ) public view returns (Client.EVM2AnyMessage memory, uint256) {
+        (
+            Client.EVM2AnyMessage memory evm2AnyMessage,
+            uint256 fee
+        ) = _quoteCcipFee(
+                TYPE_REQUEST_ADD_LIQUIDITY,
+                msg.sender,
+                token2id[token],
+                amount
+            );
+        return (evm2AnyMessage, fee);
     }
 
     function quoteSendFee(
         address token,
         uint256 amount
-    ) public view returns (uint256 fee) {
-        uint16 tokenId = token2id[token];
-        (, uint256 _ccipFee) = _quoteCcipFee(
-            TYPE_REQUEST_SEND_TOKEN,
-            msg.sender,
-            tokenId,
-            amount
-        );
-        fee = _ccipFee + protocolFee;
+    ) public view returns (Client.EVM2AnyMessage memory, uint256) {
+        (
+            Client.EVM2AnyMessage memory evm2AnyMessage,
+            uint256 fee
+        ) = _quoteCcipFee(
+                TYPE_REQUEST_SEND_TOKEN,
+                msg.sender,
+                token2id[token],
+                amount
+            );
+        fee = fee + protocolFee;
+        return (evm2AnyMessage, fee);
     }
 
     function addLiquidity(
@@ -151,24 +156,24 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
 
         // Quote message and fee
         (
-            Client.EVM2AnyMessage memory _evm2AnyMessage,
-            uint256 _ccipFee
+            Client.EVM2AnyMessage memory evm2AnyMessage,
+            uint256 ccipFee
         ) = _quoteCcipFee(
                 TYPE_REQUEST_ADD_LIQUIDITY,
                 msg.sender,
                 tokenId,
                 amountToBridge
             );
-        require(msg.value >= _ccipFee, "Insufficient fee");
+        require(msg.value >= ccipFee, "Insufficient fee");
 
         // Send the message
-        bytes32 messageId = router.ccipSend{value: _ccipFee}(
-            destinationChainSelector,
-            _evm2AnyMessage
+        bytes32 messageId = router.ccipSend{value: ccipFee}(
+            targetChainSelector,
+            evm2AnyMessage
         );
 
         // Refund excess Eth
-        uint _excessEth = msg.value - _ccipFee;
+        uint _excessEth = msg.value - ccipFee;
         if (_excessEth > 0) {
             payable(msg.sender).transfer(_excessEth);
         }
@@ -176,13 +181,13 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         // Emit an event with message details
         emit MessageSent(
             messageId,
-            destinationChainSelector,
-            destinationBridge,
+            targetChainSelector,
+            targetBridge,
             TYPE_REQUEST_ADD_LIQUIDITY,
             msg.sender,
             tokenId,
             amountToBridge,
-            _ccipFee
+            ccipFee
         );
     }
 
@@ -197,30 +202,30 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         uint256 amountToBridge = balanceAfter - balanceBefore;
         uint16 tokenId = token2id[token];
         require(
-            amountToBridge <= destinationBalance[tokenId],
-            "Insufficient liquidity on destination"
+            amountToBridge <= targetBalance[tokenId],
+            "Insufficient balance in target chain"
         );
 
         // Quote message and fee
         (
-            Client.EVM2AnyMessage memory _evm2AnyMessage,
-            uint256 _ccipFee
+            Client.EVM2AnyMessage memory evm2AnyMessage,
+            uint256 ccipFee
         ) = _quoteCcipFee(
-                TYPE_REQUEST_ADD_LIQUIDITY,
+                TYPE_REQUEST_SEND_TOKEN,
                 msg.sender,
                 tokenId,
                 amountToBridge
             );
-        uint256 fee = _ccipFee + protocolFee;
+        uint256 fee = ccipFee + protocolFee;
         require(msg.value >= fee, "Insufficient fee");
 
         // Send the message
-        bytes32 messageId = router.ccipSend{value: _ccipFee}(
-            destinationChainSelector,
-            _evm2AnyMessage
+        bytes32 messageId = router.ccipSend{value: ccipFee}(
+            targetChainSelector,
+            evm2AnyMessage
         );
 
-        destinationBalance[tokenId] -= amountToBridge;
+        targetBalance[tokenId] -= amountToBridge;
 
         // Refund excess Eth
         uint _excessEth = msg.value - fee;
@@ -231,13 +236,13 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         // Emit an event with message details
         emit MessageSent(
             messageId,
-            destinationChainSelector,
-            destinationBridge,
+            targetChainSelector,
+            targetBridge,
             TYPE_REQUEST_SEND_TOKEN,
             msg.sender,
             tokenId,
             amountToBridge,
-            _ccipFee
+            ccipFee
         );
     }
 
@@ -257,11 +262,11 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         ) = abi.decode(latestData, (uint16, address, uint16, uint256));
 
         if (msgType == TYPE_REQUEST_ADD_LIQUIDITY) {
-            destinationBalance[tokenId] += amount;
+            targetBalance[tokenId] += amount;
         } else if (msgType == TYPE_REQUEST_SEND_TOKEN) {
             address token = id2token[tokenId];
             IERC20(token).safeTransfer(toAddress, amount);
-            destinationBalance[tokenId] += amount;
+            targetBalance[tokenId] += amount;
         } else {
             revert("Invalid message type");
         }
@@ -278,23 +283,18 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     }
 
     // Owner functions
-    function setDestinationChainSelector(
-        uint64 _destinationChainSelector
+    function setTargetChainSelector(
+        uint64 _targetChainSelector
     ) external onlyOwner {
-        require(_destinationChainSelector != 0, "ChainSelector can't be 0");
-        destinationChainSelector = _destinationChainSelector;
-        emit SetDestinationChainSelector(_destinationChainSelector);
+        require(_targetChainSelector != 0, "ChainSelector can't be 0");
+        targetChainSelector = _targetChainSelector;
+        emit SetTargetChainSelector(_targetChainSelector);
     }
 
-    function setDestinationBridge(
-        address _destinationBridge
-    ) external onlyOwner {
-        require(
-            _destinationBridge != address(0),
-            "DestinationBridge can't be 0x0"
-        );
-        destinationBridge = _destinationBridge;
-        emit SetDestinationBridge(_destinationBridge);
+    function setTargetBridge(address _targetBridge) external onlyOwner {
+        require(_targetBridge != address(0), "TargetBridge can't be 0x0");
+        targetBridge = _targetBridge;
+        emit SetTargetBridge(_targetBridge);
     }
 
     function setProtocolFee(uint256 _protocolFee) external onlyOwner {
