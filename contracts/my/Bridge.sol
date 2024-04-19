@@ -66,7 +66,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     IRouterClient public router;
 
     modifier isSupportedToken(address _token) {
-        require(token2id[_token] > 0, "Not supported token");
+        require(token2id[_token] != 0, "Not supported token");
         _;
     }
 
