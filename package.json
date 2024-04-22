@@ -14,6 +14,12 @@
     "deployBridge-bscTestnet": "npx hardhat run ./scripts/deployBridge.js --network bscTestnet",
     "configBridge-bscTestnet": "npx hardhat run ./scripts/configBridge.js --network bscTestnet",
     "test-bscTestnet": "npx hardhat test ./test/Bridge.test.js --network bscTestnet",
+
+    "deployMockUSDT-arbitrumSepolia": "npx hardhat run ./scripts/deployMockUSDT.js --network arbitrumSepolia",
+    "deployMockUSDC-arbitrumSepolia": "npx hardhat run ./scripts/deployMockUSDC.js --network arbitrumSepolia",
+    "deployBridge-arbitrumSepolia": "npx hardhat run ./scripts/deployBridge.js --network arbitrumSepolia",
+    "configBridge-arbitrumSepolia": "npx hardhat run ./scripts/configBridge.js --network arbitrumSepolia",
+    "test-arbitrumSepolia": "npx hardhat test ./test/Bridge.test.js --network arbitrumSepolia",
     
     "deployMockUSDT-eth": "npx hardhat run ./scripts/deployMockUSDT.js --network mainnet",
     "deployMockUSDC-eth": "npx hardhat run ./scripts/deployMockUSDC.js --network mainnet",

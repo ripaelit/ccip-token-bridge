@@ -1,7 +1,12 @@
+const { targetChains } = require("./constants/index.js");
 const { configBridge } = require("./helpers.js");
+const hre = require('hardhat');
 
 async function main() {
-  await configBridge();
+  const network = hre.network.name;
+  for (const targetChain of targetChains[network]) {
+    await configBridge(targetChain);
+  }
 }
 
 main()

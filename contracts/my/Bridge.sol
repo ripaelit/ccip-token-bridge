@@ -59,7 +59,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     mapping(uint16 => address) public id2token; // tokenId => address
     mapping(address => uint16) public token2id; // address => tokenId
     uint16 public lastTokenId;
-    mapping(uint16 => uint256) targetBalance; // tokenId => amount
+    mapping(uint16 => uint256) public targetBalance; // tokenId => amount
     uint64 public targetChainSelector;
     address public targetBridge;
     uint256 public protocolFee;
