@@ -2,19 +2,19 @@
   "sepolia": {
     "MockUSDT": "0x9C0Ce9D2cEce3Eb55d3562A0FB8A25b6ea82082d",
     "MockUSDC": "0xea485A0BFcD17618296bF85dE46A2e3f13f80f5a",
-    "Bridge-bscTestnet": "0xEB7D377c86F63f9dB1e05007545df1EBE883C398",
-    "Bridge-arbitrumSepolia": "0xF496bf8D91EaB586D49F3611753DBf077314cA49"
+    "Bridge-bscTestnet": "0xfB97c7FeA3752eDCa2aeb757c7e26b0bf2f4be9a",
+    "Bridge-arbitrumSepolia": "0x8BfEE6B1b1c9F7255F35574E3EC23d09959cE5c2"
   },
   "bscTestnet": {
     "MockUSDT": "0x1317EE60b378062aF66eF8DE4398eA104dc54Db4",
     "MockUSDC": "0xbBB6D3FE3d94a12b8C2186Af4Ab279fC277d203c",
-    "Bridge-sepolia": "0xBBF5f4D5c82165C73d26217C2462DCfA4934f225",
-    "Bridge-arbitrumSepolia": "0xcFE1F561546d1Acd9F2Ff38d46cbc975c52d79Ab"
+    "Bridge-sepolia": "0x7c19d5eCE76F47D33369bE1bEfb4E9Ac537debaa",
+    "Bridge-arbitrumSepolia": "0xEc82904Ef0D137CEde550f68191F9afd49a0D60d"
   },
   "arbitrumSepolia": {
     "MockUSDT": "0x7e1A5b7E08305c45AA0d51D756B222749B73eAcA",
     "MockUSDC": "0x394F0c6446a5279b7D8fB185846C8484a49F058f",
-    "Bridge-sepolia": "0x2Bc392D34fd587e8C695dE3D97f425E0277729C2",
-    "Bridge-bscTestnet": "0x62E597915AbcE663E57De6aEa0CDa89AB95dd61F"
+    "Bridge-sepolia": "0xd7849015E33D19AaB946665C14d8204A6ae72358",
+    "Bridge-bscTestnet": "0x3067F08b4E8b52909f05FB3548383BCA684Cc4Ed"
   }
 }

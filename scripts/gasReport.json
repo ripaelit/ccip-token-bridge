@@ -2,19 +2,19 @@
   "sepolia": {
     "MockUSDT": 2282115,
     "MockUSDC": 2324412,
-    "Bridge-bscTestnet": 5903293,
-    "Bridge-arbitrumSepolia": 5902581
+    "Bridge-bscTestnet": 3854986,
+    "Bridge-arbitrumSepolia": 3854986
   },
   "bscTestnet": {
     "MockUSDT": 1549837,
     "MockUSDC": 232475,
-    "Bridge-sepolia": 3942010,
-    "Bridge-arbitrumSepolia": 3942010
+    "Bridge-sepolia": 3854986,
+    "Bridge-arbitrumSepolia": 3854986
   },
   "arbitrumSepolia": {
     "MockUSDT": 1528514,
     "MockUSDC": 1537280,
-    "Bridge-sepolia": 3946669,
-    "Bridge-bscTestnet": 3932221
+    "Bridge-sepolia": 3853804,
+    "Bridge-bscTestnet": 3799439
   }
 }

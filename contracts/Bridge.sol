@@ -22,6 +22,9 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     error NothingToWithdraw(); // Used when trying to withdraw but there's nothing to withdraw.
     error InsufficientToWithdraw(); // Used when trying to withdraw token but the balance is insufficient to withdraw.
     error FailedToWithdrawEth(address owner, address target, uint256 value); // Used when the withdrawal of Ether fails.
+    error InsufficientFee(); // Used when trying to send ccip message but fee is insufficient.
+    error InsufficientInTarget(); // Used when trying to send token but target balance is insufficient.
+    error InvalidMessageType(); // Used when trying to send token but message type is invalid.
 
     // Event emitted when a message is sent to another chain.
     event AddLiquidity(
@@ -183,7 +186,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
                 tokenId,
                 amountToBridge
             );
-        require(msg.value >= ccipFee, "Insufficient fee");
+        if (msg.value < ccipFee) revert InsufficientFee();
 
         // Send the message
         bytes32 messageId = router.ccipSend{value: ccipFee}(
@@ -220,10 +223,8 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         uint256 balanceAfter = IERC20(token).balanceOf(address(this));
         uint256 amountToBridge = balanceAfter - balanceBefore;
         uint16 tokenId = token2id[token];
-        require(
-            amountToBridge <= targetBalance[tokenId],
-            "Insufficient balance in target chain"
-        );
+        
+        if (amountToBridge > targetBalance[tokenId]) revert InsufficientInTarget();
 
         // Quote message and fee
         (
@@ -236,7 +237,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
                 amountToBridge
             );
         uint256 fee = ccipFee + protocolFee;
-        require(msg.value >= fee, "Insufficient fee");
+        if (msg.value < fee) revert InsufficientFee();
 
         // Send the message
         bytes32 messageId = router.ccipSend{value: ccipFee}(
@@ -289,7 +290,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         } else if (msgType == TYPE_REQUEST_WITHDRAW_TOKEN) {
             targetBalance[tokenId] -= amount;
         } else {
-            revert("Invalid message type");
+            revert InvalidMessageType();
         }
 
         emit MessageReceived(
@@ -374,7 +375,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     ) external payable onlyOwner isSupportedToken(token) {
         if (amount == 0) revert NothingToWithdraw();
         uint256 balance = IERC20(token).balanceOf(address(this));
-        if (amount <= balance) revert InsufficientToWithdraw();
+        if (amount > balance) revert InsufficientToWithdraw();
 
         uint16 tokenId = token2id[token];
         // Quote message and fee
@@ -387,7 +388,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
                 tokenId,
                 amount
             );
-        require(msg.value >= ccipFee, "Insufficient fee");
+        if (msg.value < ccipFee) revert InsufficientFee();
 
         IERC20(token).safeTransfer(beneficiary, amount);
 
