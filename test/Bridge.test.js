@@ -6,7 +6,7 @@ const {
 const { tokens, tokenAbi, targetChains } = require('../scripts/constants');
 
 describe('Test Bridge', () => {
-  it.skip(`Mint MUSDT`, async () => {
+  it.skip(`Mint`, async () => {
     const [owner] = await ethers.getSigners();
     const network = hre.network.name;
     const tokenAddress = tokens[network].musdt;

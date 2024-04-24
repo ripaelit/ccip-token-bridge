@@ -19,11 +19,12 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     // Custom errors to provide more descriptive revert messages.
-    error NothingToWithdraw(); // Used when trying to withdraw Ether but there's nothing to withdraw.
+    error NothingToWithdraw(); // Used when trying to withdraw but there's nothing to withdraw.
+    error InsufficientToWithdraw(); // Used when trying to withdraw token but the balance is insufficient to withdraw.
     error FailedToWithdrawEth(address owner, address target, uint256 value); // Used when the withdrawal of Ether fails.
 
     // Event emitted when a message is sent to another chain.
-    event MessageSent(
+    event AddLiquidity(
         bytes32 indexed messageId, // The unique ID of the message.
         uint64 indexed targetChainSelector, // The chain selector of the target chain.
         address receiver, // The address of the receiver on the target chain.
@@ -33,8 +34,16 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         uint256 amount, // The amount of token.
         uint256 fee // The fee paid for sending the message.
     );
-
-    // Event emitted when a message is received from another chain.
+    event SendToken(
+        bytes32 indexed messageId, // The unique ID of the message.
+        uint64 indexed targetChainSelector, // The chain selector of the target chain.
+        address receiver, // The address of the receiver on the target chain.
+        uint16 msgType, // The type of message.
+        address toAddress, // The address to receive token.
+        uint16 tokenId, // The token id.
+        uint256 amount, // The amount of token.
+        uint256 fee // The fee paid for sending the message.
+    );
     event MessageReceived(
         bytes32 indexed messageId, // The unique ID of the message.
         uint64 indexed sourceChainSelector, // The chain selector of the source chain.
@@ -44,17 +53,27 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         uint16 tokenId, // The token id.
         uint256 amount // The amount of token.
     );
-
-    event AddToken(uint16 _tokenId, address _token);
-    event RemoveToken(uint16 _tokenId, address _token);
     event SetTargetChainSelector(uint64 _targetChainSelector);
     event SetTargetBridge(address _targetBridge);
     event SetProtocolFee(uint256 _protocolFee);
+    event AddToken(uint16 _tokenId, address _token);
+    event RemoveToken(uint16 _tokenId, address _token);
     event Withdraw(address _beneficiary);
-    event WithdrawToken(address _token, address _beneficiary);
+    event WithdrawToken(
+        bytes32 indexed messageId, // The unique ID of the message.
+        uint64 indexed targetChainSelector, // The chain selector of the target chain.
+        address receiver, // The address of the receiver on the target chain.
+        uint16 msgType, // The type of message.
+        address toAddress, // The address to receive token.
+        uint16 tokenId, // The token id.
+        uint256 amount, // The amount of token.
+        address beneficiary, // The address of beneficiary.
+        uint256 fee // The fee paid for sending the message.
+    );
 
     uint16 internal constant TYPE_REQUEST_ADD_LIQUIDITY = 1;
     uint16 internal constant TYPE_REQUEST_SEND_TOKEN = 2;
+    uint16 internal constant TYPE_REQUEST_WITHDRAW_TOKEN = 3;
 
     mapping(uint16 => address) public id2token; // tokenId => address
     mapping(address => uint16) public token2id; // address => tokenId
@@ -179,7 +198,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         }
 
         // Emit an event with message details
-        emit MessageSent(
+        emit AddLiquidity(
             messageId,
             targetChainSelector,
             targetBridge,
@@ -234,7 +253,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         }
 
         // Emit an event with message details
-        emit MessageSent(
+        emit SendToken(
             messageId,
             targetChainSelector,
             targetBridge,
@@ -267,6 +286,8 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
             address token = id2token[tokenId];
             IERC20(token).safeTransfer(toAddress, amount);
             targetBalance[tokenId] += amount;
+        } else if (msgType == TYPE_REQUEST_WITHDRAW_TOKEN) {
+            targetBalance[tokenId] -= amount;
         } else {
             revert("Invalid message type");
         }
@@ -326,7 +347,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     /// @dev This function reverts if there are no funds to withdraw or if the transfer fails.
     /// It should only be callable by the owner of the contract.
     /// @param beneficiary The address to which the Ether should be sent.
-    function withdraw(address beneficiary) public onlyOwner {
+    function withdraw(address beneficiary) external onlyOwner {
         // Retrieve the balance of this contract
         uint256 amount = address(this).balance;
 
@@ -348,16 +369,50 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     /// @param beneficiary The address to which the tokens will be sent.
     function withdrawToken(
         address token,
+        uint256 amount,
         address beneficiary
-    ) public onlyOwner isSupportedToken(token) {
-        // Retrieve the balance of this contract
-        uint256 amount = IERC20(token).balanceOf(address(this));
-
-        // Revert if there is nothing to withdraw
+    ) external payable onlyOwner isSupportedToken(token) {
         if (amount == 0) revert NothingToWithdraw();
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        if (amount <= balance) revert InsufficientToWithdraw();
+
+        uint16 tokenId = token2id[token];
+        // Quote message and fee
+        (
+            Client.EVM2AnyMessage memory evm2AnyMessage,
+            uint256 ccipFee
+        ) = _quoteCcipFee(
+                TYPE_REQUEST_WITHDRAW_TOKEN,
+                msg.sender,
+                tokenId,
+                amount
+            );
+        require(msg.value >= ccipFee, "Insufficient fee");
 
         IERC20(token).safeTransfer(beneficiary, amount);
 
-        emit WithdrawToken(token, beneficiary);
+        // Send the message
+        bytes32 messageId = router.ccipSend{value: ccipFee}(
+            targetChainSelector,
+            evm2AnyMessage
+        );
+
+        // Refund excess Eth
+        uint _excessEth = msg.value - ccipFee;
+        if (_excessEth > 0) {
+            payable(msg.sender).transfer(_excessEth);
+        }
+
+        emit WithdrawToken(
+            messageId,
+            targetChainSelector,
+            targetBridge,
+            TYPE_REQUEST_WITHDRAW_TOKEN,
+            msg.sender,
+            tokenId,
+            amount,
+            beneficiary,
+            ccipFee
+        );
     }
 }
