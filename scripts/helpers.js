@@ -175,6 +175,26 @@ const configBridge = async (targetChain) => {
   console.log(`Bridge.addToken(${tokens[network].musdc}): ${await Bridge.getSupportedTokens()}`);
 }
 
+const transferOwnershipBridge = async (targetChain, toAddress) => {
+  const network = hre.network.name;
+  const BridgeAddr = getTargetAddress(`Bridge-${targetChain}`, network);
+  const Bridge = await ethers.getContractAt('Bridge', BridgeAddr);
+  tx = await Bridge.transferOwnership(toAddress);
+  await tx.wait();
+  console.log(`Bridge.transferOwnership(${toAddress}) in ${network}-${targetChain}`);
+  console.log(`Current owner: ${await Bridge.owner()}`);
+}
+
+const acceptOwnershipBridge = async (targetChain) => {
+  const network = hre.network.name;
+  const BridgeAddr = getTargetAddress(`Bridge-${targetChain}`, network);
+  const Bridge = await ethers.getContractAt('Bridge', BridgeAddr);
+  tx = await Bridge.acceptOwnership();
+  await tx.wait();
+  console.log(`Bridge.acceptOwnership() in ${network}-${targetChain}`);
+  console.log(`Current owner: ${await Bridge.owner()}`);
+}
+
 const deployMockUSDT = async () => {
   // hre.changeNetwork(network);
   let network = hre.network.name;
@@ -234,5 +254,7 @@ module.exports = {
   deployBridge,
   configBridge,
   deployMockUSDT,
-  deployMockUSDC
+  deployMockUSDC,
+  transferOwnershipBridge,
+  acceptOwnershipBridge
 };
