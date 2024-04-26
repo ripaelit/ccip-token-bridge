@@ -11,8 +11,6 @@ const getTargetAddress = (contractName, network) => {
 };
 
 const setTargetAddress = async (contractName, network, address) => {
-  if (!process.env.ADDRESS_REPORT) return;
-
   if (deployments[network] == undefined) {
     deployments[network] = {};
   }
@@ -25,8 +23,6 @@ const setTargetAddress = async (contractName, network, address) => {
 };
 
 const setGasReport = async (contractName, network, balanceBefore) => {
-  if (!process.env.GAS_REPORT) return;
-
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceAfter = await ethers.provider.getBalance(owner.address);
