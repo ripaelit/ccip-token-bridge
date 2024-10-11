@@ -1,10 +1,17 @@
-const fs = require('fs');
-const deployments = require('./deployments.json');
-const gasReport = require('./gasReport.json');
-const hre = require('hardhat');
-const { ethers, run } = require('hardhat');
-const { routers, links, tokens, targetChains, chainSelectors, protocolFee } = require("./constants");
-const { setTimeout } = require('timers/promises');
+const fs = require("fs");
+const deployments = require("./deployments.json");
+const gasReport = require("./gasReport.json");
+const hre = require("hardhat");
+const { ethers, run } = require("hardhat");
+const {
+  routers,
+  links,
+  tokens,
+  targetChains,
+  chainSelectors,
+  protocolFee,
+} = require("./constants");
+const { setTimeout } = require("timers/promises");
 
 const getTargetAddress = (contractName, network) => {
   return deployments[network][contractName];
@@ -15,11 +22,17 @@ const setTargetAddress = async (contractName, network, address) => {
     deployments[network] = {};
   }
   deployments[network][contractName] = address;
-  fs.writeFileSync('scripts/deployments.json', JSON.stringify(deployments), function (err) {
-    if (err) return console.log(err);
-  });
+  fs.writeFileSync(
+    "scripts/deployments.json",
+    JSON.stringify(deployments),
+    function (err) {
+      if (err) return console.log(err);
+    }
+  );
   await setTimeout(3000);
-  console.log(`${contractName} | ${network} | ${deployments[network][contractName]}`);
+  console.log(
+    `${contractName} | ${network} | ${deployments[network][contractName]}`
+  );
 };
 
 const setGasReport = async (contractName, network, balanceBefore) => {
@@ -34,10 +47,16 @@ const setGasReport = async (contractName, network, balanceBefore) => {
   }
   gasReport[network][contractName] = gasUsed;
 
-  fs.writeFileSync('scripts/gasReport.json', JSON.stringify(gasReport), function (err) {
-    if (err) return console.log(err);
-  });
-  console.log(`${contractName} | ${network} | gasPrice ${gasPrice} | gasUsed ${gasUsed}`);
+  fs.writeFileSync(
+    "scripts/gasReport.json",
+    JSON.stringify(gasReport),
+    function (err) {
+      if (err) return console.log(err);
+    }
+  );
+  console.log(
+    `${contractName} | ${network} | gasPrice ${gasPrice} | gasUsed ${gasUsed}`
+  );
 
   return balanceAfter;
 };
@@ -66,22 +85,33 @@ const deploySender = async () => {
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceBefore = await ethers.provider.getBalance(owner.address);
-  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+  console.log(
+    `network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`
+  );
 
   const router = routers[network];
   const link = links[network];
-  const BasicMessageSenderFactory = await ethers.getContractFactory("BasicMessageSender");
-  const BasicMessageSender = await BasicMessageSenderFactory.deploy(router, link);
+  const BasicMessageSenderFactory = await ethers.getContractFactory(
+    "BasicMessageSender"
+  );
+  const BasicMessageSender = await BasicMessageSenderFactory.deploy(
+    router,
+    link
+  );
   await BasicMessageSender.deployed();
-  await setTargetAddress("BasicMessageSender", network, BasicMessageSender.address);
+  await setTargetAddress(
+    "BasicMessageSender",
+    network,
+    BasicMessageSender.address
+  );
   await setGasReport("BasicMessageSender", network, balanceBefore);
 
   try {
-    await run('verify:verify', {
-      address: getTargetAddress('BasicMessageSender', network),
+    await run("verify:verify", {
+      address: getTargetAddress("BasicMessageSender", network),
       constructorArguments: [router, link],
     });
-    console.log('Verified BasicMessageSender');
+    console.log("Verified BasicMessageSender");
   } catch (e) {
     console.log(e);
   }
@@ -93,103 +123,126 @@ const deployReceiver = async () => {
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceBefore = await ethers.provider.getBalance(owner.address);
-  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+  console.log(
+    `network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`
+  );
 
   const router = routers[network];
-  const BasicMessageReceiverFactory = await ethers.getContractFactory("BasicMessageReceiver");
+  const BasicMessageReceiverFactory = await ethers.getContractFactory(
+    "BasicMessageReceiver"
+  );
   const BasicMessageReceiver = await BasicMessageReceiverFactory.deploy(router);
   await BasicMessageReceiver.deployed();
-  await setTargetAddress("BasicMessageReceiver", network, BasicMessageReceiver.address);
+  await setTargetAddress(
+    "BasicMessageReceiver",
+    network,
+    BasicMessageReceiver.address
+  );
   await setGasReport("BasicMessageReceiver", network, balanceBefore);
 
   try {
-    await run('verify:verify', {
-      address: getTargetAddress('BasicMessageReceiver', network),
+    await run("verify:verify", {
+      address: getTargetAddress("BasicMessageReceiver", network),
       constructorArguments: [router],
     });
-    console.log('Verified BasicMessageReceiver');
+    console.log("Verified BasicMessageReceiver");
   } catch (e) {
     console.log(e);
   }
 };
 
-const deployBridge = async (targetChain) => {
-  // hre.changeNetwork(network);
+const deployBridge = async () => {
   let network = hre.network.name;
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceBefore = await ethers.provider.getBalance(owner.address);
-  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+  console.log(
+    `network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`
+  );
 
   const router = routers[network];
+  const chainSelector = chainSelectors[network];
   const BridgeFactory = await ethers.getContractFactory("Bridge");
-  const Bridge = await BridgeFactory.deploy(router);
+  const Bridge = await BridgeFactory.deploy(router, chainSelector);
   await Bridge.deployed();
-  console.log(`Deployed Bridge-${targetChain} to ${Bridge.address}`);
-  await setTargetAddress(`Bridge-${targetChain}`, network, Bridge.address);
-  await setGasReport(`Bridge-${targetChain}`, network, balanceBefore);
+  await setTargetAddress(`Bridge`, network, Bridge.address);
+  await setGasReport(`Bridge`, network, balanceBefore);
 
-  try {
-    const targetAddr = getTargetAddress(`Bridge-${targetChain}`, network);
-    await run('verify:verify', {
-      address: targetAddr,
-      constructorArguments: [router],
-    });
-    console.log(`Verified Bridge ${targetAddr} in ${network}`);
-  } catch (e) {
-    console.log(e);
+  if (network != "hardhat" && network != "localhost") {
+    try {
+      const targetAddr = getTargetAddress(`Bridge`, network);
+      await run("verify:verify", {
+        address: targetAddr,
+        constructorArguments: [router, chainSelector],
+      });
+      console.log(`Verified Bridge ${targetAddr} in ${network}`);
+    } catch (e) {
+      console.log(e);
+    }
   }
 };
 
-const configBridge = async (targetChain) => {
+const configBridge = async () => {
   const network = hre.network.name;
-  const BridgeAddr = getTargetAddress(`Bridge-${targetChain}`, network);
-  const Bridge = await ethers.getContractAt('Bridge', BridgeAddr);
-  const targetChainSelector = chainSelectors[targetChain]
-  const targetBridgeAddr = getTargetAddress(`Bridge-${network}`, targetChain);
-  console.log({targetChain}, {targetChainSelector}, {targetBridgeAddr});
+  const BridgeAddr = getTargetAddress(`Bridge`, network);
+  const Bridge = await ethers.getContractAt("Bridge", BridgeAddr);
+  // const targetChainSelector = chainSelectors[targetChain]
+  // const targetBridgeAddr = getTargetAddress(`Bridge-${network}`, targetChain);
+  // console.log({targetChain}, {targetChainSelector}, {targetBridgeAddr});
 
-  tx = await Bridge.setTargetChainSelector(targetChainSelector);
-  await tx.wait();
-  console.log(`Bridge.setTargetChainSelector(${targetChainSelector}): ${await Bridge.targetChainSelector()}`);
+  // tx = await Bridge.setTargetChainSelector(targetChainSelector);
+  // await tx.wait();
+  // console.log(`Bridge.setTargetChainSelector(${targetChainSelector}): ${await Bridge.targetChainSelector()}`);
 
-  tx = await Bridge.setTargetBridge(targetBridgeAddr);
-  await tx.wait();
-  console.log(`Bridge.setTargetBridge(${targetBridgeAddr}): ${await Bridge.targetBridge()}`);
+  // tx = await Bridge.setTargetBridge(targetBridgeAddr);
+  // await tx.wait();
+  // console.log(`Bridge.setTargetBridge(${targetBridgeAddr}): ${await Bridge.targetBridge()}`);
 
   tx = await Bridge.setProtocolFee(protocolFee);
   await tx.wait();
-  console.log(`Bridge.setProtocolFee(${protocolFee}): ${await Bridge.protocolFee()}`);
+  console.log(
+    `Bridge.setProtocolFee(${protocolFee}): ${await Bridge.protocolFee()}`
+  );
 
   // Add tokens
   tx = await Bridge.addToken(tokens[network].musdt);
   await tx.wait();
-  console.log(`Bridge.addToken(${tokens[network].musdt}): ${await Bridge.getSupportedTokens()}`);
-  
+  console.log(
+    `Bridge.addToken(${
+      tokens[network].musdt
+    }): ${await Bridge.getSupportedTokens()}`
+  );
+
   tx = await Bridge.addToken(tokens[network].musdc);
   await tx.wait();
-  console.log(`Bridge.addToken(${tokens[network].musdc}): ${await Bridge.getSupportedTokens()}`);
-}
+  console.log(
+    `Bridge.addToken(${
+      tokens[network].musdc
+    }): ${await Bridge.getSupportedTokens()}`
+  );
+};
 
 const transferOwnershipBridge = async (targetChain, toAddress) => {
   const network = hre.network.name;
   const BridgeAddr = getTargetAddress(`Bridge-${targetChain}`, network);
-  const Bridge = await ethers.getContractAt('Bridge', BridgeAddr);
+  const Bridge = await ethers.getContractAt("Bridge", BridgeAddr);
   tx = await Bridge.transferOwnership(toAddress);
   await tx.wait();
-  console.log(`Bridge.transferOwnership(${toAddress}) in ${network}-${targetChain}`);
+  console.log(
+    `Bridge.transferOwnership(${toAddress}) in ${network}-${targetChain}`
+  );
   console.log(`Current owner: ${await Bridge.owner()}`);
-}
+};
 
 const acceptOwnershipBridge = async (targetChain) => {
   const network = hre.network.name;
   const BridgeAddr = getTargetAddress(`Bridge-${targetChain}`, network);
-  const Bridge = await ethers.getContractAt('Bridge', BridgeAddr);
+  const Bridge = await ethers.getContractAt("Bridge", BridgeAddr);
   tx = await Bridge.acceptOwnership();
   await tx.wait();
   console.log(`Bridge.acceptOwnership() in ${network}-${targetChain}`);
   console.log(`Current owner: ${await Bridge.owner()}`);
-}
+};
 
 const deployMockUSDT = async () => {
   // hre.changeNetwork(network);
@@ -197,7 +250,9 @@ const deployMockUSDT = async () => {
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceBefore = await ethers.provider.getBalance(owner.address);
-  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+  console.log(
+    `network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`
+  );
 
   const MockUSDTFactory = await ethers.getContractFactory("MockUSDT");
   const MockUSDT = await MockUSDTFactory.deploy("Mock USDT", "MUSDT");
@@ -205,14 +260,16 @@ const deployMockUSDT = async () => {
   await setTargetAddress("MockUSDT", network, MockUSDT.address);
   await setGasReport("MockUSDT", network, balanceBefore);
 
-  try {
-    await run('verify:verify', {
-      address: getTargetAddress('MockUSDT', network),
-      constructorArguments: ["Mock USDT", "MUSDT"],
-    });
-    console.log('Verified MockUSDT');
-  } catch (e) {
-    console.log(e);
+  if (network != "hardhat" && network != "localhost") {
+    try {
+      await run("verify:verify", {
+        address: getTargetAddress("MockUSDT", network),
+        constructorArguments: ["Mock USDT", "MUSDT"],
+      });
+      console.log("Verified MockUSDT");
+    } catch (e) {
+      console.log(e);
+    }
   }
 };
 
@@ -222,7 +279,9 @@ const deployMockUSDC = async () => {
   let accounts = await ethers.getSigners();
   let owner = accounts[0];
   let balanceBefore = await ethers.provider.getBalance(owner.address);
-  console.log(`network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`)
+  console.log(
+    `network: ${network}, owner: ${owner.address}, balance: ${balanceBefore}`
+  );
 
   const MockUSDCFactory = await ethers.getContractFactory("MockUSDT");
   const MockUSDC = await MockUSDCFactory.deploy("Mock USDC", "MUSDC");
@@ -230,14 +289,16 @@ const deployMockUSDC = async () => {
   await setTargetAddress("MockUSDC", network, MockUSDC.address);
   await setGasReport("MockUSDC", network, balanceBefore);
 
-  try {
-    await run('verify:verify', {
-      address: getTargetAddress('MockUSDC', network),
-      constructorArguments: ["Mock USDC", "MUSDC"],
-    });
-    console.log('Verified MockUSDC');
-  } catch (e) {
-    console.log(e);
+  if (network != "hardhat" && network != "localhost") {
+    try {
+      await run("verify:verify", {
+        address: getTargetAddress("MockUSDC", network),
+        constructorArguments: ["Mock USDC", "MUSDC"],
+      });
+      console.log("Verified MockUSDC");
+    } catch (e) {
+      console.log(e);
+    }
   }
 };
 
@@ -252,5 +313,5 @@ module.exports = {
   deployMockUSDT,
   deployMockUSDC,
   transferOwnershipBridge,
-  acceptOwnershipBridge
+  acceptOwnershipBridge,
 };

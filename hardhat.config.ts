@@ -22,6 +22,7 @@ const BSC_API_KEY = process.env.BSC_API_KEY || "api-key";
 const FANTOM_API_KEY = process.env.FANTOM_API_KEY || "api-key";
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY || "api-key";
 const ARBITRUM_API_KEY = process.env.ARBITRUM_API_KEY || "api-key";
+const BASE_API_KEY = process.env.BASE_API_KEY || 'api-key';
 
 const config: HardhatUserConfig = {
   solidity: '0.8.19',
@@ -99,6 +100,18 @@ const config: HardhatUserConfig = {
       chainId: 4002,
       accounts: PRIVATE_KEY ? [PRIVATE_KEY] : { mnemonic: MNEMONIC },
     },
+    base: {
+      gasPrice: 'auto',
+      url: 'https://mainnet.base.org',
+      chainId: 8453,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : { mnemonic: MNEMONIC },
+    },
+    baseSepolia: {
+      gasPrice: 'auto',
+      url: 'https://sepolia.base.org',
+      chainId: 84532,
+      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : { mnemonic: MNEMONIC },
+    },
   },
   typechain: {
     externalArtifacts: ['./abi/*.json']
@@ -128,6 +141,22 @@ const config: HardhatUserConfig = {
           browserURL: 'https://sepolia.arbiscan.io/',
         },
       },
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: 'https://api.basescan.org/api',
+          browserURL: 'https://basescan.org',
+        },
+      },
+      {
+        network: 'baseSepolia',
+        chainId: 84532,
+        urls: {
+          apiURL: 'https://api-sepolia.basescan.org/api',
+          browserURL: '	https://sepolia.basescan.org/',
+        },
+      },
     ],
     // Your API key for Etherscan
     // Obtain one at https://etherscan.io/
@@ -135,6 +164,8 @@ const config: HardhatUserConfig = {
       // Ethereum
       mainnet: ETHEREUM_API_KEY,
       sepolia: ETHEREUM_API_KEY,
+      base: BASE_API_KEY,
+      baseSepolia: BASE_API_KEY,
       // Optimism
       optimisticEthereum: OPTIMISM_API_KEY,
       optimismSepolia: OPTIMISM_API_KEY,

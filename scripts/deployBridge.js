@@ -1,12 +1,7 @@
-const { targetChains } = require("./constants/index.js");
 const { deployBridge } = require("./helpers.js");
-const hre = require('hardhat');
 
 async function main() {
-  const network = hre.network.name;
-  for (const targetChain of targetChains[network]) {
-    await deployBridge(targetChain);
-  }
+  await deployBridge();
 }
 
 main()

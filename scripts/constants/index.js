@@ -5,7 +5,8 @@ const routers = {
 
   sepolia: "0x0BF3dE8c5D3e8A2B34D2BEeB17ABfCeBaf363A59",
   bscTestnet: "0xE1053aE1857476f36A3C62580FF9b016E8EE8F6f",
-  arbitrumSepolia: "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165"
+  arbitrumSepolia: "0x2a9C5afB0d0e4BAb2BCdaE109EC4b0c4Be15a165",
+  baseSepolia: "0xD3b06cEbF099CE7DA4AcCf578aaebFDBd6e88a93"
 };
 
 const chainSelectors = {
@@ -15,7 +16,8 @@ const chainSelectors = {
 
   sepolia: "16015286601757825753",
   bscTestnet: "13264668187771770619",
-  arbitrumSepolia: "3478487238524512106"
+  arbitrumSepolia: "3478487238524512106",
+  baseSepolia: "10344971235874465080"
 };
 
 const links = {
@@ -25,7 +27,8 @@ const links = {
   
   sepolia: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
   bscTestnet: "0x84b9B910527Ad5C03A9Ca831909E21e236EA7b06",
-  arbitrumSepolia: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E"
+  arbitrumSepolia: "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
+  baseSepolia: "0xE4aB69C077896252FAFBD49EFD26B5D171A32410"
 };
 
 const weths = {
@@ -35,7 +38,8 @@ const weths = {
 
   sepolia: "0x097D90c9d3E0B50Ca60e1ae45F6A81010f9FB534",
   bscTestnet: "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd",
-  arbitrumSepolia: "0xE591bf0A0CF924A0674d7792db046B23CEbF5f34"
+  arbitrumSepolia: "0xE591bf0A0CF924A0674d7792db046B23CEbF5f34",
+  baseSepolia: "0x4200000000000000000000000000000000000006"
 };
 
 const tokens = {
@@ -54,12 +58,14 @@ const tokens = {
     musdc: "0xea485A0BFcD17618296bF85dE46A2e3f13f80f5a",
   },
   bscTestnet: {
-    musdt: "0x1317EE60b378062aF66eF8DE4398eA104dc54Db4",
-    musdc: "0xbBB6D3FE3d94a12b8C2186Af4Ab279fC277d203c",
+    musdt: "0x778DD95862cE8e6C36E6Eb6708b163Db47175520",
   },
   arbitrumSepolia: {
     musdt: "0x7e1A5b7E08305c45AA0d51D756B222749B73eAcA",
     musdc: "0x394F0c6446a5279b7D8fB185846C8484a49F058f",
+  },
+  baseSepolia: {
+    musdt: "0x425Aa956003a6b09A4BA97e4c834277a4DD8b7Fa",
   }
 }
 
@@ -69,8 +75,9 @@ const targetChains = {
   arbitrumOne: ["mainnet", "bsc"],
 
   sepolia: ["bscTestnet", "arbitrumSepolia"],
-  bscTestnet: ["sepolia", "arbitrumSepolia"],
-  arbitrumSepolia: ["sepolia", "bscTestnet"]
+  arbitrumSepolia: ["sepolia", "bscTestnet"],
+  bscTestnet: ["baseSepolia"],
+  baseSepolia: ["bscTestnet"],
 }
 
 const tokenAbi = [

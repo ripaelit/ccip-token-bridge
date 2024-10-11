@@ -9,12 +9,14 @@
     "MockUSDT": 1549837,
     "MockUSDC": 232475,
     "Bridge-sepolia": 3854986,
-    "Bridge-arbitrumSepolia": 3854986
+    "Bridge-arbitrumSepolia": 3854986,
+    "Bridge": 4218051
   },
   "arbitrumSepolia": {
     "MockUSDT": 1528514,
     "MockUSDC": 1537280,
     "Bridge-sepolia": 3853804,
     "Bridge-bscTestnet": 3799439
-  }
+  },
+  "baseSepolia": { "Bridge": 4211885, "MockUSDT": 1552869 }
 }

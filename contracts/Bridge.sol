@@ -31,10 +31,10 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
 
     // Event emitted when a message is sent to another chain.
     event AddLiquidity(
-        uint64 indexed remoteChainSelector, // The chain selector of the target chain.
         address localToken, // The local token which will be added.
-        address remoteToken, // The remote token for the local token.
-        uint256 amount // The amount of token.
+        uint256 amount, // The amount of token.
+        uint64 indexed remoteChainSelector, // The chain selector of the target chain.
+        address remoteToken // The remote token for the local token.
     );
     event SendToken(
         bytes32 indexed messageId, // The unique ID of the message.
@@ -69,6 +69,12 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         bytes32 _tokenId
     );
     event DeregisterToken(bytes32 _tokenId, address _token);
+    event VerifyToken(
+        address _localToken,
+        uint64 _remoteChainSelector,
+        address _remoteToken,
+        bool _toVerify
+    );
     event WithdrawFee();
     event WithdrawToken(
         address token, // The token address to withdraw.
@@ -134,9 +140,9 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
             tokenId = keccak256(
                 abi.encodePacked(
                     remoteChainSelector,
-                    remoteToken
+                    remoteToken,
                     chainSelector,
-                    localToken,
+                    localToken
                 )
             );
         }
@@ -172,7 +178,11 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         address remoteToken
     ) public view returns (Client.EVM2AnyMessage memory, uint256) {
         // Check token validation
-        bytes32 tokenId = getTokenId(localToken, remoteChainSelector, remoteToken);
+        bytes32 tokenId = getTokenId(
+            localToken,
+            remoteChainSelector,
+            remoteToken
+        );
         if (id2token[tokenId] != localToken) revert UnregisteredToken();
         if (!verified[tokenId]) revert UnverifiedToken();
 
@@ -191,20 +201,24 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
     }
 
     function addLiquidity(
-        uint64 remoteChainSelector,
         address localToken,
-        address remoteToken,
-        uint256 amount
+        uint256 amount,
+        uint64 remoteChainSelector,
+        address remoteToken
     ) external nonReentrant {
         // Check token validation
-        bytes32 tokenId = getTokenId(localToken, remoteChainSelector, remoteToken);
+        bytes32 tokenId = getTokenId(
+            localToken,
+            remoteChainSelector,
+            remoteToken
+        );
         if (id2token[tokenId] != localToken) revert UnregisteredToken();
         if (!verified[tokenId]) revert UnverifiedToken();
 
         IERC20(localToken).safeTransferFrom(msg.sender, address(this), amount);
 
         // Emit an event with message details
-        emit AddLiquidity(remoteChainSelector, localToken, remoteToken, amount);
+        emit AddLiquidity(localToken, amount, remoteChainSelector, remoteToken);
     }
 
     function send(
@@ -215,7 +229,11 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         address remoteToken
     ) external payable nonReentrant {
         // Check token validation
-        bytes32 tokenId = getTokenId(localToken, remoteChainSelector, remoteToken);
+        bytes32 tokenId = getTokenId(
+            localToken,
+            remoteChainSelector,
+            remoteToken
+        );
         if (id2token[tokenId] != localToken) revert UnregisteredToken();
         if (!verified[tokenId]) revert UnverifiedToken();
 
@@ -371,7 +389,11 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         }
 
         // Check token validation
-        bytes32 tokenId = getTokenId(localToken, remoteChainSelector, remoteToken);
+        bytes32 tokenId = getTokenId(
+            localToken,
+            remoteChainSelector,
+            remoteToken
+        );
         require(id2token[tokenId] == address(0), "Already registered");
 
         id2token[tokenId] = localToken;
@@ -397,8 +419,29 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         require(tokenAddress != address(0), "Token ID does not exist");
 
         delete id2token[tokenId];
-        
+
         emit DeregisterToken(tokenId, tokenAddress);
+    }
+
+    function verifyToken(
+        address localToken,
+        uint64 remoteChainSelector,
+        address remoteToken,
+        bool toVerify
+    ) external payable onlyOwner {
+        bytes32 tokenId = getTokenId(
+            localToken,
+            remoteChainSelector,
+            remoteToken
+        );
+        verified[tokenId] = toVerify;
+
+        emit VerifyToken(
+            localToken,
+            remoteChainSelector,
+            remoteToken,
+            toVerify
+        );
     }
 
     function withdrawFee() external nonReentrant onlyOwner {
@@ -416,10 +459,7 @@ contract Bridge is CCIPReceiver, OwnerIsCreator, ReentrancyGuard {
         emit WithdrawFee();
     }
 
-    function withdrawToken(
-        address token,
-        uint256 amount
-    ) external onlyOwner {
+    function withdrawToken(address token, uint256 amount) external onlyOwner {
         if (amount > IERC20(token).balanceOf(address(this)))
             revert InsufficientToWithdraw();
 
