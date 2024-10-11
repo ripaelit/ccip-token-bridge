@@ -25,6 +25,7 @@ const ARBITRUM_API_KEY = process.env.ARBITRUM_API_KEY || "api-key";
 
 const config: HardhatUserConfig = {
   solidity: '0.8.19',
+  defaultNetwork: 'hardhat',
   networks: {
     hardhat: {
       gas: 30e6,
@@ -153,7 +154,7 @@ const config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 40000000000000
-},
+  },
 };
 
 export default config;
